@@ -1,4 +1,4 @@
-# PST-DL
+# PST Manager
 
 A cross-platform CLI version manager for [PalworldSaveTools](https://github.com/deafdudecomputers/PalworldSaveTools). Download, install, upgrade, and manage PalworldSaveTools from your terminal.
 
@@ -6,46 +6,44 @@ A cross-platform CLI version manager for [PalworldSaveTools](https://github.com/
 
 **Linux / macOS:**
 ```bash
-curl -LsSf https://raw.githubusercontent.com/CyrixJD115/PST-DL/main/.Unix/install.sh | sh
+curl -LsSf https://raw.githubusercontent.com/CyrixJD115/PST-Manager/main/.Unix/install.sh | sh
 ```
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/CyrixJD115/PST-DL/main/.Windows/install.ps1 | iex
+irm https://raw.githubusercontent.com/CyrixJD115/PST-Manager/main/.Windows/install.ps1 | iex
 ```
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `pstdl` or `pstdl -h` | Show help |
-| `pstdl -i` or `pstdl -install` | Download and install PalworldSaveTools |
-| `pstdl -u` or `pstdl -upgrade` | Update PalworldSaveTools to the latest version |
-| `pstdl -v` or `pstdl -version` | Show pstdl and remote PST version |
-| `pstdl -g` or `pstdl -github` | Open PalworldSaveTools GitHub page |
-| `pstdl -uninstall` | Uninstall PalworldSaveTools |
-| `pstdl -uninstall-all` | Uninstall pstdl and PalworldSaveTools |
-| `pstdl -update-self` | Update pstdl to the latest version |
+| `pstm` or `pstm -h` | Show help |
+| `pstm -i` or `pstm -install` | Download and install PalworldSaveTools |
+| `pstm -u` or `pstm -upgrade` | Update PalworldSaveTools to the latest version |
+| `pstm -v` or `pstm -version` | Show pstm and remote PST version |
+| `pstm -g` or `pstm -github` | Open PalworldSaveTools GitHub page |
+| `pstm -uninstall` | Uninstall PalworldSaveTools |
+| `pstm -uninstall-all` | Uninstall pstm and PalworldSaveTools |
+| `pstm -update-self` | Update pstm to the latest version |
 
 ## Project Structure
 
 ```
-PST-DL/
+PST-Manager/
 ├── .Unix/
-│   ├── pstdl            # CLI tool (bash) - Linux/macOS
-│   └── install.sh       # Bootstrap installer (curl | sh)
+│   ├── pstm              # CLI tool (bash) - Linux/macOS
+│   └── install.sh        # Bootstrap installer (curl | sh)
 ├── .Windows/
-│   ├── pstdl.ps1        # CLI tool (PowerShell) - Windows
-│   └── install.ps1      # Bootstrap installer (irm | iex)
+│   ├── pstm.ps1          # CLI tool (PowerShell) - Windows
+│   └── install.ps1       # Bootstrap installer (irm | iex)
 └── README.md
 ```
 
 ## Install Locations
 
-| Component | Windows | Linux / macOS |
-|-----------|---------|---------------|
-| pstdl binary | `%LOCALAPPDATA%\pstdl\pstdl.ps1` | `~/.local/bin/pstdl` |
-| PST data | `%LOCALAPPDATA%\palworldsavetools\` | `~/.local/share/palworldsavetools/` |
+- **pstm binary**: `%LOCALAPPDATA%\pstm\pstm.ps1` (Windows) / `~/.local/bin/pstm` (Linux/macOS)
+- **PST data**: `%LOCALAPPDATA%\palworldsavetools\` (Windows) / `~/.local/share/palworldsavetools/` (Linux/macOS)
 
 ## How It Works
 
@@ -73,7 +71,7 @@ PST-DL/
 
 ## Auto-Update
 
-pstdl silently checks for updates on every run. If a newer version is found, it auto-updates in-place. You can also manually update with `pstdl -update-self`.
+pstm silently checks for updates on every run. If a newer version is found, it auto-updates in-place. You can also manually update with `pstm -update-self`.
 
 ## License
 
@@ -82,4 +80,4 @@ This project follows the same license as PalworldSaveTools.
 ## Credits
 
 - Original PalworldSaveTools by [ deafdudecomputers](https://github.com/deafdudecomputers)
-- CLI download manager by [CyrixJD115](https://github.com/CyrixJD115)
+- PST Manager by [CyrixJD115](https://github.com/CyrixJD115)

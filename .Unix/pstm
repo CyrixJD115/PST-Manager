@@ -1,9 +1,9 @@
 #!/bin/bash
 
-PSTDL_VERSION="1.0.0"
-PSTDL_REPO="CyrixJD115/PST-DL"
+PSTM_VERSION="1.0.0"
+PSTM_REPO="CyrixJD115/PST-Manager"
 PST_REPO="deafdudecomputers/PalworldSaveTools"
-PSTDL_RAW_BASE="https://raw.githubusercontent.com/$PSTDL_REPO/main"
+PSTM_RAW_BASE="https://raw.githubusercontent.com/$PSTM_REPO/main"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -15,7 +15,7 @@ DIM='\033[2m'
 NC='\033[0m'
 
 PST_DATA_DIR="$HOME/.local/share/palworldsavetools"
-PSTDL_BIN="$HOME/.local/bin/pstdl"
+PSTM_BIN="$HOME/.local/bin/pstm"
 
 banner() {
     echo -e "${WHITE}"
@@ -36,12 +36,12 @@ divider() {
 
 show_help() {
     banner
-    echo -e "${WHITE}pstdl v${PSTDL_VERSION}${NC} - PalworldSaveTools Download Manager"
+    echo -e "${WHITE}pstm v${PSTM_VERSION}${NC} - PST Manager"
     echo ""
     divider
     echo ""
     echo -e "${BOLD}Usage:${NC}"
-    echo -e "  ${CYAN}pstdl${NC} [command]"
+    echo -e "  ${CYAN}pstm${NC} [command]"
     echo ""
     echo -e "${BOLD}Commands:${NC}"
     echo ""
@@ -49,10 +49,10 @@ show_help() {
     echo -e "  ${GREEN}-i${NC}, ${GREEN}-install${NC}          Download and install PalworldSaveTools"
     echo -e "  ${GREEN}-u${NC}, ${GREEN}-upgrade${NC}          Update PalworldSaveTools to the latest version"
     echo -e "  ${GREEN}-uninstall${NC}            Uninstall PalworldSaveTools"
-    echo -e "  ${GREEN}-v${NC}, ${GREEN}-version${NC}         Show pstdl and remote PST version"
+    echo -e "  ${GREEN}-v${NC}, ${GREEN}-version${NC}         Show pstm and remote PST version"
     echo -e "  ${GREEN}-g${NC}, ${GREEN}-github${NC}          Open PalworldSaveTools GitHub page"
-    echo -e "  ${GREEN}-uninstall-all${NC}        Uninstall pstdl and PalworldSaveTools"
-    echo -e "  ${GREEN}-update-self${NC}          Update pstdl to the latest version"
+    echo -e "  ${GREEN}-uninstall-all${NC}        Uninstall pstm and PalworldSaveTools"
+    echo -e "  ${GREEN}-update-self${NC}          Update pstm to the latest version"
     echo ""
     divider
     echo ""
@@ -76,8 +76,8 @@ get_latest_pst_tag() {
     return 1
 }
 
-get_latest_pstdl_version() {
-    local api_url="https://api.github.com/repos/$PSTDL_REPO/releases/latest"
+get_latest_pstm_version() {
+    local api_url="https://api.github.com/repos/$PSTM_REPO/releases/latest"
     local tag
     tag=$(curl -s "$api_url" 2>/dev/null | grep '"tag_name"' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/')
     if [ -n "$tag" ]; then
@@ -87,11 +87,11 @@ get_latest_pstdl_version() {
     fi
 }
 
-check_for_pstdl_update() {
+check_for_pstm_update() {
     local remote_ver
-    remote_ver=$(get_latest_pstdl_version)
-    if [ -n "$remote_ver" ] && [ "$remote_ver" != "$PSTDL_VERSION" ]; then
-        echo -e "${YELLOW}> pstdl update available: v${PSTDL_VERSION} -> v${remote_ver} (auto-updating...)${NC}"
+    remote_ver=$(get_latest_pstm_version)
+    if [ -n "$remote_ver" ] && [ "$remote_ver" != "$PSTM_VERSION" ]; then
+        echo -e "${YELLOW}> pstm update available: v${PSTM_VERSION} -> v${remote_ver} (auto-updating...)${NC}"
         update_self
     fi
 }
@@ -220,7 +220,7 @@ do_upgrade() {
 
     if [ ! -d "$PST_DATA_DIR/source" ]; then
         echo -e "${RED}x Error: PalworldSaveTools is not installed.${NC}"
-        echo -e "${YELLOW}  Run ${CYAN}pstdl -i${NC} to install first.${NC}"
+        echo -e "${YELLOW}  Run ${CYAN}pstm -i${NC} to install first.${NC}"
         exit 1
     fi
 
@@ -312,17 +312,17 @@ do_uninstall() {
 do_uninstall_all() {
     echo -e "${YELLOW}> This will delete:${NC}"
     echo -e "  ${CYAN}$PST_DATA_DIR${NC}"
-    echo -e "  ${CYAN}$PSTDL_BIN${NC}"
+    echo -e "  ${CYAN}$PSTM_BIN${NC}"
     echo ""
     echo -e "${YELLOW}> Are you sure? [y/N]${NC} "
     read -r confirm
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
         rm -rf "$PST_DATA_DIR"
-        rm -f "$PSTDL_BIN"
+        rm -f "$PSTM_BIN"
 
         for rc_file in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile"; do
             if [ -f "$rc_file" ] && grep -qF '.local/bin' "$rc_file" 2>/dev/null; then
-                local tmp_rc="${rc_file}.pstdl_tmp"
+                local tmp_rc="${rc_file}.pstm_tmp"
                 grep -vF '.local/bin' "$rc_file" > "$tmp_rc"
                 mv "$tmp_rc" "$rc_file"
                 echo -e "${GREEN}* Removed PATH entry from ${CYAN}$rc_file${NC}"
@@ -330,7 +330,7 @@ do_uninstall_all() {
         done
 
         echo ""
-        echo -e "${GREEN}* pstdl and PalworldSaveTools fully uninstalled.${NC}"
+        echo -e "${GREEN}* pstm and PalworldSaveTools fully uninstalled.${NC}"
     else
         echo -e "${DIM}Cancelled.${NC}"
     fi
@@ -338,7 +338,7 @@ do_uninstall_all() {
 
 do_version() {
     banner
-    echo -e "${BOLD}pstdl${NC}   v${PSTDL_VERSION}"
+    echo -e "${BOLD}pstm${NC}      v${PSTM_VERSION}"
     echo -e "${BOLD}pst remote${NC} querying..."
 
     local TAG_NAME
@@ -369,20 +369,20 @@ do_github() {
 }
 
 update_self() {
-    local tmp_file="/tmp/pstdl_update"
-    curl -sL "${PSTDL_RAW_BASE}/.Unix/pstdl" -o "$tmp_file" 2>/dev/null
+    local tmp_file="/tmp/pstm_update"
+    curl -sL "${PSTM_RAW_BASE}/.Unix/pstm" -o "$tmp_file" 2>/dev/null
 
     if [ -f "$tmp_file" ] && [ -s "$tmp_file" ]; then
         chmod +x "$tmp_file"
-        mv "$tmp_file" "$PSTDL_BIN"
-        echo -e "${GREEN}* pstdl updated successfully!${NC}"
+        mv "$tmp_file" "$PSTM_BIN"
+        echo -e "${GREEN}* pstm updated successfully!${NC}"
     else
         echo -e "${RED}x Error: Failed to download update.${NC}"
         rm -f "$tmp_file"
     fi
 }
 
-check_for_pstdl_update &>/dev/null &
+check_for_pstm_update &>/dev/null &
 
 case "${1:-}" in
     -h|--help|"")
@@ -408,12 +408,12 @@ case "${1:-}" in
         ;;
     -update-self)
         banner
-        echo -e "${YELLOW}> Checking for pstdl update...${NC}"
+        echo -e "${YELLOW}> Checking for pstm update...${NC}"
         update_self
         ;;
     *)
         echo -e "${RED}x Unknown command: ${1}${NC}"
-        echo -e "${YELLOW}  Run ${CYAN}pstdl -h${NC} for help.${NC}"
+        echo -e "${YELLOW}  Run ${CYAN}pstm -h${NC} for help.${NC}"
         exit 1
         ;;
 esac

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-PSTDL_REPO="CyrixJD115/PST-DL"
-PSTDL_RAW_BASE="https://raw.githubusercontent.com/$PSTDL_REPO/main"
-PSTDL_BIN="$HOME/.local/bin/pstdl"
+PSTM_REPO="CyrixJD115/PST-Manager"
+PSTM_RAW_BASE="https://raw.githubusercontent.com/$PSTM_REPO/main"
+PSTM_BIN="$HOME/.local/bin/pstm"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -26,21 +26,21 @@ EOF
 echo -e "${NC}"
 echo -e "${WHITE}════════════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "${BOLD}${WHITE}Installing pstdl...${NC}"
+echo -e "${BOLD}${WHITE}Installing pstm...${NC}"
 echo ""
 
 mkdir -p "$HOME/.local/bin"
 
-echo -e "${YELLOW}> Downloading pstdl...${NC}"
-curl -sL "${PSTDL_RAW_BASE}/.Unix/pstdl" -o "$PSTDL_BIN" 2>/dev/null
+echo -e "${YELLOW}> Downloading pstm...${NC}"
+curl -sL "${PSTM_RAW_BASE}/.Unix/pstm" -o "$PSTM_BIN" 2>/dev/null
 
-if [ ! -f "$PSTDL_BIN" ] || [ ! -s "$PSTDL_BIN" ]; then
-    echo -e "${RED}x Error: Failed to download pstdl.${NC}"
+if [ ! -f "$PSTM_BIN" ] || [ ! -s "$PSTM_BIN" ]; then
+    echo -e "${RED}x Error: Failed to download pstm.${NC}"
     exit 1
 fi
 
-chmod +x "$PSTDL_BIN"
-echo -e "${GREEN}* Downloaded to: ${CYAN}$PSTDL_BIN${NC}"
+chmod +x "$PSTM_BIN"
+echo -e "${GREEN}* Downloaded to: ${CYAN}$PSTM_BIN${NC}"
 echo ""
 
 PATH_UPDATED=0
@@ -74,7 +74,7 @@ fi
 echo ""
 echo -e "${WHITE}════════════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "${BOLD}${GREEN}pstdl installed successfully!${NC}"
+echo -e "${BOLD}${GREEN}pstm installed successfully!${NC}"
 echo ""
 echo -e "${BOLD}Next steps:${NC}"
 echo ""
@@ -82,8 +82,8 @@ echo -e "  ${DIM}Reload your shell:${NC}"
 echo -e "  ${CYAN}source ~/.bashrc${NC} ${DIM}(or ~/.zshrc)${NC}"
 echo ""
 echo -e "  ${DIM}Install PalworldSaveTools:${NC}"
-echo -e "  ${CYAN}pstdl -i${NC}"
+echo -e "  ${CYAN}pstm -i${NC}"
 echo ""
 echo -e "  ${DIM}Show all commands:${NC}"
-echo -e "  ${CYAN}pstdl -h${NC}"
+echo -e "  ${CYAN}pstm -h${NC}"
 echo ""

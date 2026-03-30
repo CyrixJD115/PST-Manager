@@ -1,13 +1,13 @@
 $ErrorActionPreference = "Stop"
 
-$PSTDL_VERSION = "1.0.0"
-$PSTDL_REPO = "CyrixJD115/PST-DL"
+$PSTM_VERSION = "1.0.0"
+$PSTM_REPO = "CyrixJD115/PST-Manager"
 $PST_REPO = "deafdudecomputers/PalworldSaveTools"
-$PSTDL_RAW_BASE = "https://raw.githubusercontent.com/$PSTDL_REPO/main"
+$PSTM_RAW_BASE = "https://raw.githubusercontent.com/$PSTM_REPO/main"
 
 $PST_DATA_DIR = Join-Path $env:LOCALAPPDATA "palworldsavetools"
-$PSTDL_DIR = Join-Path $env:LOCALAPPDATA "pstdl"
-$PSTDL_SCRIPT = Join-Path $PSTDL_DIR "pstdl.ps1"
+$PSTM_DIR = Join-Path $env:LOCALAPPDATA "pstm"
+$PSTM_SCRIPT = Join-Path $PSTM_DIR "pstm.ps1"
 
 function Show-Banner {
     Write-Host ""
@@ -28,13 +28,13 @@ function Show-Divider {
 
 function Show-Help {
     Show-Banner
-    Write-Host -ForegroundColor White "pstdl v${PSTDL_VERSION}" -NoNewline
-    Write-Host " - PalworldSaveTools Download Manager"
+    Write-Host -ForegroundColor White "pstm v${PSTM_VERSION}" -NoNewline
+    Write-Host " - PST Manager"
     Write-Host ""
     Show-Divider
     Write-Host ""
     Write-Host -ForegroundColor White "Usage:"
-    Write-Host "  pstdl [command]"
+    Write-Host "  pstm [command]"
     Write-Host ""
     Write-Host -ForegroundColor White "Commands:"
     Write-Host ""
@@ -42,10 +42,10 @@ function Show-Help {
     Write-Host -ForegroundColor Green "  -i" -NoNewline; Write-Host -ForegroundColor Green ", -install" -NoNewline; Write-Host "          Download and install PalworldSaveTools"
     Write-Host -ForegroundColor Green "  -u" -NoNewline; Write-Host -ForegroundColor Green ", -upgrade" -NoNewline; Write-Host "          Update PalworldSaveTools to the latest version"
     Write-Host -ForegroundColor Green "  -uninstall" -NoNewline; Write-Host "            Uninstall PalworldSaveTools"
-    Write-Host -ForegroundColor Green "  -v" -NoNewline; Write-Host -ForegroundColor Green ", -version" -NoNewline; Write-Host "         Show pstdl and remote PST version"
+    Write-Host -ForegroundColor Green "  -v" -NoNewline; Write-Host -ForegroundColor Green ", -version" -NoNewline; Write-Host "         Show pstm and remote PST version"
     Write-Host -ForegroundColor Green "  -g" -NoNewline; Write-Host -ForegroundColor Green ", -github" -NoNewline; Write-Host "          Open PalworldSaveTools GitHub page"
-    Write-Host -ForegroundColor Green "  -uninstall-all" -NoNewline; Write-Host "        Uninstall pstdl and PalworldSaveTools"
-    Write-Host -ForegroundColor Green "  -update-self" -NoNewline; Write-Host "          Update pstdl to the latest version"
+    Write-Host -ForegroundColor Green "  -uninstall-all" -NoNewline; Write-Host "        Uninstall pstm and PalworldSaveTools"
+    Write-Host -ForegroundColor Green "  -update-self" -NoNewline; Write-Host "          Update pstm to the latest version"
     Write-Host ""
     Show-Divider
     Write-Host ""
@@ -65,8 +65,8 @@ function Get-LatestPstTag {
     return ""
 }
 
-function Get-LatestPstdlVersion {
-    $apiUrl = "https://api.github.com/repos/$PSTDL_REPO/releases/latest"
+function Get-LatestPstmVersion {
+    $apiUrl = "https://api.github.com/repos/$PSTM_REPO/releases/latest"
     try {
         $response = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing
         $tag = $response.tag_name
@@ -221,7 +221,7 @@ function Upgrade-PST {
     if (-not (Test-Path $PST_DATA_DIR)) {
         Write-Host -ForegroundColor Red "x Error: PalworldSaveTools is not installed."
         Write-Host -ForegroundColor Yellow "  Run " -NoNewline
-        Write-Host -ForegroundColor Cyan "pstdl -i" -NoNewline
+        Write-Host -ForegroundColor Cyan "pstm -i" -NoNewline
         Write-Host -ForegroundColor Yellow " to install first."
         exit 1
     }
@@ -341,7 +341,7 @@ function Uninstall-PST {
 function Uninstall-All {
     Write-Host -ForegroundColor Yellow "> This will delete:"
     Write-Host -ForegroundColor Cyan "  $PST_DATA_DIR"
-    Write-Host -ForegroundColor Cyan "  $PSTDL_DIR"
+    Write-Host -ForegroundColor Cyan "  $PSTM_DIR"
     Write-Host ""
     $confirm = Read-Host -Prompt "> Are you sure? [y/N]"
 
@@ -352,17 +352,17 @@ function Uninstall-All {
         $shortcutPath = Join-Path $desktop "PalworldSaveTools.lnk"
         if (Test-Path $shortcutPath) { Remove-Item $shortcutPath -Force }
 
-        Remove-Item $PSTDL_DIR -Recurse -Force
+        Remove-Item $PSTM_DIR -Recurse -Force
 
         $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-        if ($userPath -like "*pstdl*") {
-            $newPath = ($userPath -split ';' | Where-Object { $_ -notlike "*pstdl*" }) -join ';'
+        if ($userPath -like "*pstm*") {
+            $newPath = ($userPath -split ';' | Where-Object { $_ -notlike "*pstm*" }) -join ';'
             [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
-            Write-Host -ForegroundColor Yellow "> Removed pstdl from user PATH."
+            Write-Host -ForegroundColor Yellow "> Removed pstm from user PATH."
         }
 
         Write-Host ""
-        Write-Host -ForegroundColor Green "* pstdl and PalworldSaveTools fully uninstalled."
+        Write-Host -ForegroundColor Green "* pstm and PalworldSaveTools fully uninstalled."
     } else {
         Write-Host -ForegroundColor Gray "Cancelled."
     }
@@ -370,7 +370,7 @@ function Uninstall-All {
 
 function Show-Version {
     Show-Banner
-    Write-Host -ForegroundColor White "pstdl   v$PSTDL_VERSION"
+    Write-Host -ForegroundColor White "pstm      v$PSTM_VERSION"
     Write-Host -ForegroundColor White "pst remote" -NoNewline; Write-Host " querying..."
 
     $tagName = Get-LatestPstTag
@@ -393,14 +393,14 @@ function Open-GitHub {
 }
 
 function Update-Self {
-    Write-Host -ForegroundColor Yellow "> Checking for pstdl update..."
-    $tmpFile = Join-Path $env:TEMP "pstdl_update.ps1"
+    Write-Host -ForegroundColor Yellow "> Checking for pstm update..."
+    $tmpFile = Join-Path $env:TEMP "pstm_update.ps1"
 
     try {
-        Invoke-WebRequest -Uri "${PSTDL_RAW_BASE}/.Windows/pstdl.ps1" -OutFile $tmpFile -UseBasicParsing
+        Invoke-WebRequest -Uri "${PSTM_RAW_BASE}/.Windows/pstm.ps1" -OutFile $tmpFile -UseBasicParsing
         if ((Test-Path $tmpFile) -and ((Get-Item $tmpFile).Length -gt 0)) {
-            Move-Item -Path $tmpFile -Destination $PSTDL_SCRIPT -Force
-            Write-Host -ForegroundColor Green "* pstdl updated successfully!"
+            Move-Item -Path $tmpFile -Destination $PSTM_SCRIPT -Force
+            Write-Host -ForegroundColor Green "* pstm updated successfully!"
         } else {
             Write-Host -ForegroundColor Red "x Error: Downloaded file is empty."
             Remove-Item $tmpFile -Force -ErrorAction SilentlyContinue
@@ -411,9 +411,9 @@ function Update-Self {
     }
 }
 
-$remoteVer = Get-LatestPstdlVersion
-if ($remoteVer -and $remoteVer -ne $PSTDL_VERSION) {
-    Write-Host -ForegroundColor Yellow "> pstdl update available: v$PSTDL_VERSION -> v$remoteVer (auto-updating...)"
+$remoteVer = Get-LatestPstmVersion
+if ($remoteVer -and $remoteVer -ne $PSTM_VERSION) {
+    Write-Host -ForegroundColor Yellow "> pstm update available: v$PSTM_VERSION -> v$remoteVer (auto-updating...)"
     Update-Self
 }
 
@@ -434,7 +434,7 @@ switch ($command) {
     default {
         Write-Host -ForegroundColor Red "x Unknown command: $command"
         Write-Host -ForegroundColor Yellow "  Run " -NoNewline
-        Write-Host -ForegroundColor Cyan "pstdl -h" -NoNewline
+        Write-Host -ForegroundColor Cyan "pstm -h" -NoNewline
         Write-Host -ForegroundColor Yellow " for help."
         exit 1
     }
