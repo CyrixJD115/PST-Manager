@@ -1,154 +1,79 @@
-# PalworldSaveTools Nexus Download Script
+# PST-DL
 
-A cross-platform download script that automatically fetches the latest release of PalworldSaveTools from GitHub, extracts it to a folder, and cleans up the archive file.
+A cross-platform CLI version manager for [PalworldSaveTools](https://github.com/deafdudecomputers/PalworldSaveTools). Download, install, upgrade, and manage PalworldSaveTools from your terminal.
 
-## Features
+## Quick Install
 
-- **Cross-platform support**: Works on Windows, Linux, and macOS
-- **Automatic latest version detection**: Always downloads the newest release
-- **Automatic extraction**: Extracts the downloaded 7z file to a versioned folder
-- **Cleanup**: Removes the downloaded archive after successful extraction
-- **Error handling**: Comprehensive error checking and user-friendly messages
+**Linux / macOS:**
+```bash
+curl -LsSf https://raw.githubusercontent.com/CyrixJD115/PST-DL/main/.Unix/install.sh | sh
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/CyrixJD115/PST-DL/main/.Windows/install.ps1 | iex
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `pstdl` or `pstdl -h` | Show help |
+| `pstdl -i` or `pstdl -install` | Download and install PalworldSaveTools |
+| `pstdl -u` or `pstdl -upgrade` | Update PalworldSaveTools to the latest version |
+| `pstdl -v` or `pstdl -version` | Show pstdl and remote PST version |
+| `pstdl -g` or `pstdl -github` | Open PalworldSaveTools GitHub page |
+| `pstdl -uninstall` | Uninstall PalworldSaveTools |
+| `pstdl -uninstall-all` | Uninstall pstdl and PalworldSaveTools |
+| `pstdl -update-self` | Update pstdl to the latest version |
 
 ## Project Structure
 
 ```
-Nexus_PST_Download_Script/
-├── .Windows/
-│   ├── PST_Downloader.ps1          # PowerShell script for Windows
-│   └── DownloadPST_Windows.bat     # Batch file wrapper for PowerShell script
-├── .Python/
-│   └── DownloadPST_Python.py       # Python script (cross-platform)
+PST-DL/
 ├── .Unix/
-│   └── DownloadPST_Linux-Mac.sh    # Bash script for Linux/macOS
-└── README.md                       # This file
+│   ├── pstdl            # CLI tool (bash) - Linux/macOS
+│   └── install.sh       # Bootstrap installer (curl | sh)
+├── .Windows/
+│   ├── pstdl.ps1        # CLI tool (PowerShell) - Windows
+│   └── install.ps1      # Bootstrap installer (irm | iex)
+└── README.md
 ```
+
+## Install Locations
+
+| Component | Windows | Linux / macOS |
+|-----------|---------|---------------|
+| pstdl binary | `%LOCALAPPDATA%\pstdl\pstdl.ps1` | `~/.local/bin/pstdl` |
+| PST data | `%LOCALAPPDATA%\palworldsavetools\` | `~/.local/share/palworldsavetools/` |
+
+## How It Works
+
+### Windows
+- Downloads the prepackaged `.exe` standalone release
+- Extracts to `%LOCALAPPDATA%\palworldsavetools\`
+- Creates a desktop shortcut to `PalworldSaveTools.exe`
+
+### Linux / macOS
+- Downloads the source code from GitHub
+- Extracts to `~/.local/share/palworldsavetools/source/`
+- Auto-installs [uv](https://github.com/astral-sh/uv) if not present
+- Generates a `pst.sh` launcher (`uv run ./start.py`)
 
 ## Requirements
 
 ### Windows
-- PowerShell 5.1 or later (included with Windows)
+- PowerShell 5.1+
 - 7-Zip or NanaZip (for extraction)
-- curl.exe (included in Windows 10 1803+ and Windows 11, fallback available)
 
-### Linux/macOS
-- Bash shell
+### Linux / macOS
+- Bash
 - curl
-- p7zip (7z/7za command)
+- unzip
 
-### Python (Cross-platform)
-- Python 3.6+
-- requests library (`pip install requests`)
-- 7-Zip/NanaZip or p7zip (or py7zr as fallback)
+## Auto-Update
 
-## Usage
-
-### Windows
-
-```powershell
-.\.Windows\DownloadPST_Windows.bat
-```
-
-### Linux/macOS
-
-**Option 1: Fast Method (Recommended)**
-```bash
-sh ./.Unix/DownloadPST_Linux-Mac.sh
-```
-
-**Option 2: Fallback Method**
-```bash
-chmod +x ./.Unix/DownloadPST_Linux-Mac.sh
-./.Unix/DownloadPST_Linux-Mac.sh
-```
-
-### Python (Any Platform)
-```bash
-python ./.Python/DownloadPST_Python.py
-```
-
-## What It Does
-
-1. **Queries GitHub API** - Fetches information about the latest release
-2. **Downloads the file** - Downloads the latest PST_standalone_v{version}.7z file
-3. **Extracts the archive** - Extracts contents to a folder named `PST_standalone_v{version}`
-4. **Cleans up** - Deletes the downloaded .7z file
-
-## Output Example
-
-```
---- Starting PalworldSaveTools Download (PowerShell) ---
-
-1. Querying GitHub API for latest release...
--> Latest version found: **v1.1.51**
-
-2. Constructed Download URL: **https://github.com/deafdudecomputers/PalworldSaveTools/releases/download/v1.1.51/PST_standalone_v1.1.51.7z**
--> Output Filename: **PST_standalone_v1.1.51.7z**
-
-3. Downloading file to current directory...
-✅ Download Complete!
-File saved as: **PST_standalone_v1.1.51.7z**
-
-4. Extracting PST_standalone_v1.1.51.7z to folder 'PST_standalone_v1.1.51'...
-✅ Extraction Complete!
-Extracted to folder: **PST_standalone_v1.1.51**
-
-5. Deleting the downloaded 7z file...
-✅ Cleanup Complete!
-Deleted file: **PST_standalone_v1.1.51.7z**
-
---- End of Script ---
-```
-
-## Troubleshooting
-
-### Windows Issues
-
-**"7-Zip is not installed"**
-- Install 7-Zip from https://www.7-zip.org/
-- Or install NanaZip from Microsoft Store (recommended for Windows 11)
-
-**Slow downloads**
-- The script automatically uses curl.exe if available (fast)
-- Falls back to PowerShell's Invoke-WebRequest if curl is not found
-
-### Linux/macOS Issues
-
-**"7z command not found"**
-```bash
-# Ubuntu/Debian
-sudo apt-get install p7zip-full
-
-# CentOS/RHEL/Fedora
-sudo yum install p7zip  # or dnf install p7zip
-
-# macOS
-brew install p7zip
-```
-
-### Python Issues
-
-**"requests module not found"**
-```bash
-pip install requests
-```
-
-**Extraction fails**
-- Install 7-Zip/p7zip, or
-- Install py7zr: `pip install py7zr`
-
-## Performance Notes
-
-- **PowerShell**: Uses curl.exe for fast downloads when available
-- **Python**: Uses streaming downloads for memory efficiency
-- **Bash**: Uses optimized curl for maximum speed
-
-## Security
-
-- Only downloads from the official GitHub repository
-- Validates HTTPS connections
-- No elevated privileges required
-- Scripts can be inspected before running
+pstdl silently checks for updates on every run. If a newer version is found, it auto-updates in-place. You can also manually update with `pstdl -update-self`.
 
 ## License
 
@@ -156,5 +81,5 @@ This project follows the same license as PalworldSaveTools.
 
 ## Credits
 
-- Original PalworldSaveTools by deafdudecomputers
-- Download automation scripts for easy access
+- Original PalworldSaveTools by [ deafdudecomputers](https://github.com/deafdudecomputers)
+- CLI download manager by [CyrixJD115](https://github.com/CyrixJD115)

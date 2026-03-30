@@ -1,0 +1,424 @@
+#!/bin/bash
+
+PSTDL_VERSION="1.0.0"
+PSTDL_REPO="CyrixJD115/PST-DL"
+PST_REPO="deafdudecomputers/PalworldSaveTools"
+PSTDL_RAW_BASE="https://raw.githubusercontent.com/$PSTDL_REPO/main"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+WHITE='\033[1;37m'
+BOLD='\033[1m'
+DIM='\033[2m'
+NC='\033[0m'
+
+PST_DATA_DIR="$HOME/.local/share/palworldsavetools"
+PSTDL_BIN="$HOME/.local/bin/pstdl"
+
+banner() {
+    echo -e "${WHITE}"
+    cat << 'EOF'
+██████╗ ███████╗████████╗    ██████╗ ██╗     
+██╔══██╗██╔════╝╚══██╔══╝    ██╔══██╗██║     
+██████╔╝███████╗   ██║       ██║  ██║██║     
+██╔═══╝ ╚════██║   ██║       ██║  ██║██║     
+██║     ███████║   ██║       ██████╔╝███████╗
+╚═╝     ╚══════╝   ╚═╝       ╚═════╝ ╚══════╝
+EOF
+    echo -e "${NC}"
+}
+
+divider() {
+    echo -e "${WHITE}════════════════════════════════════════════════════════${NC}"
+}
+
+show_help() {
+    banner
+    echo -e "${WHITE}pstdl v${PSTDL_VERSION}${NC} - PalworldSaveTools Download Manager"
+    echo ""
+    divider
+    echo ""
+    echo -e "${BOLD}Usage:${NC}"
+    echo -e "  ${CYAN}pstdl${NC} [command]"
+    echo ""
+    echo -e "${BOLD}Commands:${NC}"
+    echo ""
+    echo -e "  ${GREEN}-h${NC}, ${GREEN}-help${NC}            Show this help message"
+    echo -e "  ${GREEN}-i${NC}, ${GREEN}-install${NC}          Download and install PalworldSaveTools"
+    echo -e "  ${GREEN}-u${NC}, ${GREEN}-upgrade${NC}          Update PalworldSaveTools to the latest version"
+    echo -e "  ${GREEN}-uninstall${NC}            Uninstall PalworldSaveTools"
+    echo -e "  ${GREEN}-v${NC}, ${GREEN}-version${NC}         Show pstdl and remote PST version"
+    echo -e "  ${GREEN}-g${NC}, ${GREEN}-github${NC}          Open PalworldSaveTools GitHub page"
+    echo -e "  ${GREEN}-uninstall-all${NC}        Uninstall pstdl and PalworldSaveTools"
+    echo -e "  ${GREEN}-update-self${NC}          Update pstdl to the latest version"
+    echo ""
+    divider
+    echo ""
+}
+
+get_latest_pst_tag() {
+    local api_url="https://api.github.com/repos/$PST_REPO/releases"
+    local tags
+    tags=$(curl -s "$api_url" 2>/dev/null)
+    if [ -z "$tags" ]; then
+        echo ""
+        return 1
+    fi
+    echo "$tags" | grep -E '"tag_name"' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/' | while read -r tag; do
+        if [[ ! "$tag" =~ -beta ]] && [[ ! "$tag" =~ -pre ]] && [[ ! "$tag" =~ -alpha ]]; then
+            echo "$tag"
+            return 0
+        fi
+    done
+    echo ""
+    return 1
+}
+
+get_latest_pstdl_version() {
+    local api_url="https://api.github.com/repos/$PSTDL_REPO/releases/latest"
+    local tag
+    tag=$(curl -s "$api_url" 2>/dev/null | grep '"tag_name"' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/')
+    if [ -n "$tag" ]; then
+        echo "${tag#v}"
+    else
+        echo ""
+    fi
+}
+
+check_for_pstdl_update() {
+    local remote_ver
+    remote_ver=$(get_latest_pstdl_version)
+    if [ -n "$remote_ver" ] && [ "$remote_ver" != "$PSTDL_VERSION" ]; then
+        echo -e "${YELLOW}> pstdl update available: v${PSTDL_VERSION} -> v${remote_ver} (auto-updating...)${NC}"
+        update_self
+    fi
+}
+
+ensure_uv() {
+    if command -v uv >/dev/null 2>&1; then
+        return 0
+    fi
+
+    echo -e "${YELLOW}> uv not found. Installing uv...${NC}"
+    curl -LsSf https://astral.sh/uv/install.sh | sh 2>/dev/null
+
+    export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+
+    if command -v uv >/dev/null 2>&1; then
+        echo -e "${GREEN}* uv installed successfully!${NC}"
+        return 0
+    else
+        echo -e "${RED}x Error: Failed to install uv.${NC}"
+        return 1
+    fi
+}
+
+generate_pst_launcher() {
+    local launcher="$PST_DATA_DIR/pst.sh"
+    echo "#!/bin/bash" > "$launcher"
+    echo "cd \"$PST_DATA_DIR/source\"" >> "$launcher"
+    echo "uv run ./start.py \"\$@\"" >> "$launcher"
+    chmod +x "$launcher"
+    echo -e "${GREEN}* Launcher generated: ${CYAN}$launcher${NC}"
+}
+
+do_install() {
+    banner
+    divider
+    echo ""
+    echo -e "${BOLD}${WHITE}Installing PalworldSaveTools${NC}"
+    echo ""
+
+    echo -e "${YELLOW}> Fetching latest release info...${NC}"
+    local TAG_NAME
+    TAG_NAME=$(get_latest_pst_tag)
+
+    if [ -z "$TAG_NAME" ]; then
+        echo ""
+        echo -e "${RED}x Error: Failed to find the latest non-beta release.${NC}"
+        echo -e "${RED}  Check your internet connection.${NC}"
+        exit 1
+    fi
+
+    local VERSION="${TAG_NAME#v}"
+    echo -e "${GREEN}* Latest version found: ${BOLD}${TAG_NAME}${NC}"
+    echo ""
+
+    echo -e "${YELLOW}> Step 1/4: Downloading source code...${NC}"
+    local DOWNLOAD_URL="https://github.com/$PST_REPO/archive/refs/tags/$TAG_NAME.zip"
+    local OUTPUT_FILENAME="/tmp/PalworldSaveTools-$VERSION.zip"
+
+    echo -e "${CYAN}  URL: ${WHITE}$DOWNLOAD_URL${NC}"
+    curl -L -# -o "$OUTPUT_FILENAME" "$DOWNLOAD_URL" 2>/dev/null
+    echo ""
+
+    if [ ! -f "$OUTPUT_FILENAME" ]; then
+        echo -e "${RED}x Error: Download failed.${NC}"
+        exit 1
+    fi
+
+    local FILE_SIZE
+    FILE_SIZE=$(du -h "$OUTPUT_FILENAME" | cut -f1)
+    echo -e "${GREEN}* Download Complete! ${WHITE}(${FILE_SIZE})${NC}"
+    echo ""
+
+    echo -e "${YELLOW}> Step 2/4: Extracting archive...${NC}"
+    mkdir -p "$PST_DATA_DIR"
+
+    if [ -d "$PST_DATA_DIR/source" ]; then
+        rm -rf "$PST_DATA_DIR/source"
+    fi
+
+    if command -v unzip >/dev/null 2>&1; then
+        echo -e "${CYAN}  Extracting to: ${WHITE}$PST_DATA_DIR/source${NC}"
+        unzip -o -q "$OUTPUT_FILENAME" -d "$PST_DATA_DIR" >/dev/null 2>&1
+        local EXTRACTED_DIR="$PST_DATA_DIR/PalworldSaveTools-$VERSION"
+        if [ -d "$EXTRACTED_DIR" ]; then
+            mv "$EXTRACTED_DIR" "$PST_DATA_DIR/source"
+        else
+            echo -e "${RED}x Error: Failed to find extracted directory.${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${RED}x Error: unzip command not found. Please install unzip.${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}* Extraction Complete!${NC}"
+    echo ""
+
+    echo -e "${YELLOW}> Step 3/4: Cleaning up...${NC}"
+    rm -f "$OUTPUT_FILENAME"
+    echo -e "${GREEN}* Cleanup Complete!${NC}"
+    echo ""
+
+    echo -e "${YELLOW}> Step 4/4: Finalizing...${NC}"
+    ensure_uv
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+    generate_pst_launcher
+    echo ""
+
+    divider
+    echo ""
+    echo -e "${BOLD}${GREEN}Setup Complete!${NC}"
+    echo ""
+    echo -e "${BOLD}How to run:${NC}"
+    echo ""
+    echo -e "  ${CYAN}$PST_DATA_DIR/pst.sh${NC}"
+    echo ""
+}
+
+do_upgrade() {
+    banner
+    divider
+    echo ""
+    echo -e "${BOLD}${WHITE}Upgrading PalworldSaveTools${NC}"
+    echo ""
+
+    if [ ! -d "$PST_DATA_DIR/source" ]; then
+        echo -e "${RED}x Error: PalworldSaveTools is not installed.${NC}"
+        echo -e "${YELLOW}  Run ${CYAN}pstdl -i${NC} to install first.${NC}"
+        exit 1
+    fi
+
+    echo -e "${YELLOW}> Fetching latest release info...${NC}"
+    local TAG_NAME
+    TAG_NAME=$(get_latest_pst_tag)
+
+    if [ -z "$TAG_NAME" ]; then
+        echo ""
+        echo -e "${RED}x Error: Failed to find the latest non-beta release.${NC}"
+        exit 1
+    fi
+
+    local VERSION="${TAG_NAME#v}"
+    echo -e "${GREEN}* Latest version found: ${BOLD}${TAG_NAME}${NC}"
+    echo ""
+
+    echo -e "${YELLOW}> Step 1/4: Downloading source code...${NC}"
+    local DOWNLOAD_URL="https://github.com/$PST_REPO/archive/refs/tags/$TAG_NAME.zip"
+    local OUTPUT_FILENAME="/tmp/PalworldSaveTools-$VERSION.zip"
+
+    echo -e "${CYAN}  URL: ${WHITE}$DOWNLOAD_URL${NC}"
+    curl -L -# -o "$OUTPUT_FILENAME" "$DOWNLOAD_URL" 2>/dev/null
+    echo ""
+
+    if [ ! -f "$OUTPUT_FILENAME" ]; then
+        echo -e "${RED}x Error: Download failed.${NC}"
+        exit 1
+    fi
+
+    local FILE_SIZE
+    FILE_SIZE=$(du -h "$OUTPUT_FILENAME" | cut -f1)
+    echo -e "${GREEN}* Download Complete! ${WHITE}(${FILE_SIZE})${NC}"
+    echo ""
+
+    echo -e "${YELLOW}> Step 2/4: Extracting archive...${NC}"
+    rm -rf "$PST_DATA_DIR/source"
+
+    if command -v unzip >/dev/null 2>&1; then
+        echo -e "${CYAN}  Extracting to: ${WHITE}$PST_DATA_DIR/source${NC}"
+        unzip -o -q "$OUTPUT_FILENAME" -d "$PST_DATA_DIR" >/dev/null 2>&1
+        local EXTRACTED_DIR="$PST_DATA_DIR/PalworldSaveTools-$VERSION"
+        if [ -d "$EXTRACTED_DIR" ]; then
+            mv "$EXTRACTED_DIR" "$PST_DATA_DIR/source"
+        else
+            echo -e "${RED}x Error: Failed to find extracted directory.${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${RED}x Error: unzip command not found.${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}* Extraction Complete!${NC}"
+    echo ""
+
+    echo -e "${YELLOW}> Step 3/4: Cleaning up...${NC}"
+    rm -f "$OUTPUT_FILENAME"
+    echo -e "${GREEN}* Cleanup Complete!${NC}"
+    echo ""
+
+    echo -e "${YELLOW}> Step 4/4: Finalizing...${NC}"
+    ensure_uv
+    generate_pst_launcher
+    echo ""
+
+    divider
+    echo ""
+    echo -e "${BOLD}${GREEN}Upgrade Complete!${NC} ${WHITE}(${TAG_NAME})${NC}"
+    echo ""
+}
+
+do_uninstall() {
+    if [ ! -d "$PST_DATA_DIR" ]; then
+        echo -e "${RED}x PalworldSaveTools is not installed.${NC}"
+        exit 1
+    fi
+
+    echo -e "${YELLOW}> This will delete: ${CYAN}$PST_DATA_DIR${NC}"
+    echo -e "${YELLOW}> Are you sure? [y/N]${NC} "
+    read -r confirm
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        rm -rf "$PST_DATA_DIR"
+        echo -e "${GREEN}* PalworldSaveTools uninstalled successfully.${NC}"
+    else
+        echo -e "${DIM}Cancelled.${NC}"
+    fi
+}
+
+do_uninstall_all() {
+    echo -e "${YELLOW}> This will delete:${NC}"
+    echo -e "  ${CYAN}$PST_DATA_DIR${NC}"
+    echo -e "  ${CYAN}$PSTDL_BIN${NC}"
+    echo ""
+    echo -e "${YELLOW}> Are you sure? [y/N]${NC} "
+    read -r confirm
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        rm -rf "$PST_DATA_DIR"
+        rm -f "$PSTDL_BIN"
+
+        local shell_rc=""
+        if [ -f "$HOME/.bashrc" ]; then
+            shell_rc="$HOME/.bashrc"
+        elif [ -f "$HOME/.zshrc" ]; then
+            shell_rc="$HOME/.zshrc"
+        fi
+
+        if [ -n "$shell_rc" ]; then
+            if grep -q 'pstdl' "$shell_rc" 2>/dev/null; then
+                echo -e "${YELLOW}> Cleaning PATH entry from ${CYAN}$shell_rc${NC}"
+            fi
+        fi
+
+        echo ""
+        echo -e "${GREEN}* pstdl and PalworldSaveTools fully uninstalled.${NC}"
+        echo -e "${DIM}  You may want to remove ~/.local/bin from your PATH manually.${NC}"
+    else
+        echo -e "${DIM}Cancelled.${NC}"
+    fi
+}
+
+do_version() {
+    banner
+    echo -e "${BOLD}pstdl${NC}   v${PSTDL_VERSION}"
+    echo -e "${BOLD}pst remote${NC} querying..."
+
+    local TAG_NAME
+    TAG_NAME=$(get_latest_pst_tag)
+    if [ -n "$TAG_NAME" ]; then
+        echo -e "${BOLD}pst latest${NC} ${GREEN}${TAG_NAME}${NC} (non-beta)"
+    else
+        echo -e "${BOLD}pst latest${NC} ${RED}unavailable${NC}"
+    fi
+
+    local INSTALLED_VER="not installed"
+    if [ -d "$PST_DATA_DIR/source" ]; then
+        INSTALLED_VER="installed"
+    fi
+    echo -e "${BOLD}pst local${NC}  ${INSTALLED_VER}"
+}
+
+do_github() {
+    local url="https://github.com/$PST_REPO"
+    echo -e "${CYAN}> Opening: ${WHITE}$url${NC}"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        open "$url" 2>/dev/null
+    elif command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "$url" 2>/dev/null
+    else
+        echo -e "${YELLOW}  Could not open browser. URL: $url${NC}"
+    fi
+}
+
+update_self() {
+    local tmp_file="/tmp/pstdl_update"
+    curl -sL "${PSTDL_RAW_BASE}/.Unix/pstdl" -o "$tmp_file" 2>/dev/null
+
+    if [ -f "$tmp_file" ] && [ -s "$tmp_file" ]; then
+        chmod +x "$tmp_file"
+        mv "$tmp_file" "$PSTDL_BIN"
+        echo -e "${GREEN}* pstdl updated successfully!${NC}"
+    else
+        echo -e "${RED}x Error: Failed to download update.${NC}"
+        rm -f "$tmp_file"
+    fi
+}
+
+check_for_pstdl_update &>/dev/null &
+
+case "${1:-}" in
+    -h|--help|"")
+        show_help
+        ;;
+    -i|-install)
+        do_install
+        ;;
+    -u|-upgrade)
+        do_upgrade
+        ;;
+    -v|-version)
+        do_version
+        ;;
+    -g|-github)
+        do_github
+        ;;
+    -uninstall)
+        do_uninstall
+        ;;
+    -uninstall-all)
+        do_uninstall_all
+        ;;
+    -update-self)
+        banner
+        echo -e "${YELLOW}> Checking for pstdl update...${NC}"
+        update_self
+        ;;
+    *)
+        echo -e "${RED}x Unknown command: ${1}${NC}"
+        echo -e "${YELLOW}  Run ${CYAN}pstdl -h${NC} for help.${NC}"
+        exit 1
+        ;;
+esac
