@@ -320,22 +320,17 @@ do_uninstall_all() {
         rm -rf "$PST_DATA_DIR"
         rm -f "$PSTDL_BIN"
 
-        local shell_rc=""
-        if [ -f "$HOME/.bashrc" ]; then
-            shell_rc="$HOME/.bashrc"
-        elif [ -f "$HOME/.zshrc" ]; then
-            shell_rc="$HOME/.zshrc"
-        fi
-
-        if [ -n "$shell_rc" ]; then
-            if grep -q 'pstdl' "$shell_rc" 2>/dev/null; then
-                echo -e "${YELLOW}> Cleaning PATH entry from ${CYAN}$shell_rc${NC}"
+        for rc_file in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile"; do
+            if [ -f "$rc_file" ] && grep -qF '.local/bin' "$rc_file" 2>/dev/null; then
+                local tmp_rc="${rc_file}.pstdl_tmp"
+                grep -vF '.local/bin' "$rc_file" > "$tmp_rc"
+                mv "$tmp_rc" "$rc_file"
+                echo -e "${GREEN}* Removed PATH entry from ${CYAN}$rc_file${NC}"
             fi
-        fi
+        done
 
         echo ""
         echo -e "${GREEN}* pstdl and PalworldSaveTools fully uninstalled.${NC}"
-        echo -e "${DIM}  You may want to remove ~/.local/bin from your PATH manually.${NC}"
     else
         echo -e "${DIM}Cancelled.${NC}"
     fi
