@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Stop"
 
 $PSTM_VERSION = "1.0.0"
 $PSTM_REPO = "CyrixJD115/PST-Manager"
@@ -166,10 +166,10 @@ function Install-PST {
 
     try {
         if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
-            & curl.exe -L -# -o $outputFilename $downloadUrl 2>$null
-            if ($LASTEXITCODE -ne 0) { throw "curl.exe failed" }
+            $null = & curl.exe -L -# -o $outputFilename $downloadUrl 2>&1
+            if ($LASTEXITCODE -ne 0) { throw "curl.exe failed (exit code: $LASTEXITCODE)" }
         } else {
-            Invoke-WebRequest -Uri $downloadUrl -OutFile $outputFilename
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $outputFilename -UseBasicParsing
         }
 
         $fileSize = (Get-Item $outputFilename).Length / 1MB
@@ -283,10 +283,10 @@ function Upgrade-PST {
 
     try {
         if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
-            & curl.exe -L -# -o $outputFilename $downloadUrl 2>$null
-            if ($LASTEXITCODE -ne 0) { throw "curl.exe failed" }
+            $null = & curl.exe -L -# -o $outputFilename $downloadUrl 2>&1
+            if ($LASTEXITCODE -ne 0) { throw "curl.exe failed (exit code: $LASTEXITCODE)" }
         } else {
-            Invoke-WebRequest -Uri $downloadUrl -OutFile $outputFilename
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $outputFilename -UseBasicParsing
         }
 
         $fileSize = (Get-Item $outputFilename).Length / 1MB

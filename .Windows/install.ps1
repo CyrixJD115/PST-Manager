@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Stop"
 
 $PSTM_REPO = "CyrixJD115/PST-Manager"
 $PSTM_RAW_BASE = "https://raw.githubusercontent.com/$PSTM_REPO/main"
