@@ -51,20 +51,20 @@ PST-Manager/
 ```
 <pst_data_dir>/
 ├── source/       # extracted source code from .zip
-└── pst*          # launcher (pst.exe on Windows, pst on Unix)
+└── pst           # launcher (pst.ps1 on Windows, pst on Unix)
 ```
 
 ## How It Works
 
 Both platforms:
-- Download the source `.zip` from GitHub releases
+- Download the source `.zip` from GitHub tags
 - Extract to `<data>/source/`
 - Auto-install [uv](https://github.com/astral-sh/uv) if not present
 - Generate a launcher that runs `uv python install 3.13` then `uv run ./start.py`
 
 ### Windows launcher
-- Tries to download prebuilt `pst.exe` from PST-Manager releases
-- Falls back to `pst.ps1` script if exe is not available
+- Generates a `pst.ps1` launcher script
+- Creates a desktop shortcut with icon
 
 ### Unix launcher
 - Generates executable `pst` bash script
@@ -83,5 +83,5 @@ pstm silently checks for updates on every run. If a newer version is found, it a
 
 ## Credits
 
-- Original PalworldSaveTools by [ deafdudecomputers](https://github.com/deafdudecomputers)
+- Original PalworldSaveTools by [deafdudecomputers](https://github.com/deafdudecomputers)
 - PST Manager by [CyrixJD115](https://github.com/CyrixJD115)
