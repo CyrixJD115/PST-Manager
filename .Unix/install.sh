@@ -43,11 +43,21 @@ chmod +x "$PSTM_BIN"
 echo -e "${GREEN}* Downloaded to: ${CYAN}$PSTM_BIN${NC}"
 echo ""
 
+SHELL_NAME=$(basename "$SHELL")
 PATH_UPDATED=0
+
+create_config_file() {
+    local file="$1"
+    if [ ! -f "$file" ]; then
+        touch "$file"
+    fi
+}
+
 add_to_path() {
     local rc_file="$1"
     local line='export PATH="$HOME/.local/bin:$PATH"'
 
+    create_config_file "$rc_file"
     if ! grep -qF '.local/bin' "$rc_file" 2>/dev/null; then
         echo "" >> "$rc_file"
         echo "$line" >> "$rc_file"
@@ -55,12 +65,26 @@ add_to_path() {
     fi
 }
 
-if [ -f "$HOME/.bashrc" ]; then
-    add_to_path "$HOME/.bashrc"
-fi
-if [ -f "$HOME/.zshrc" ]; then
-    add_to_path "$HOME/.zshrc"
-fi
+case "$OSTYPE" in
+    darwin*)
+        if [ "$SHELL_NAME" = "zsh" ]; then
+            add_to_path "$HOME/.zprofile"
+            add_to_path "$HOME/.zshrc"
+        elif [ "$SHELL_NAME" = "bash" ]; then
+            add_to_path "$HOME/.bash_profile"
+            add_to_path "$HOME/.bashrc"
+        fi
+        ;;
+    *)
+        if [ -f "$HOME/.bashrc" ]; then
+            add_to_path "$HOME/.bashrc"
+        fi
+        if [ -f "$HOME/.zshrc" ]; then
+            add_to_path "$HOME/.zshrc"
+        fi
+        ;;
+esac
+
 if [ -f "$HOME/.profile" ]; then
     add_to_path "$HOME/.profile"
 fi
@@ -79,9 +103,22 @@ echo ""
 echo -e "${BOLD}Next steps:${NC}"
 echo ""
 echo -e "  ${DIM}Reload your shell:${NC}"
-echo -e "  ${CYAN}source ~/.bashrc${NC} ${DIM}(or ~/.zshrc)${NC}"
+case "$OSTYPE" in
+    darwin*)
+        if [ "$SHELL_NAME" = "zsh" ]; then
+            echo -e "  ${CYAN}source ~/.zprofile${NC}"
+        elif [ "$SHELL_NAME" = "bash" ]; then
+            echo -e "  ${CYAN}source ~/.bash_profile${NC}"
+        fi
+        ;;
+    *)
+        echo -e "  ${CYAN}source ~/.bashrc${NC} ${DIM}(or ~/.zshrc)${NC}"
+        ;;
+esac
 echo ""
-echo -e "  ${DIM}Install PalworldSaveTools:${NC}"
+echo -e "  ${DIM}Or open a new terminal window${NC}"
+echo ""
+echo -e "  ${DIM}Then install PalworldSaveTools:${NC}"
 echo -e "  ${CYAN}pstm -i${NC}"
 echo ""
 echo -e "  ${DIM}Show all commands:${NC}"
