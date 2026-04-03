@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PSTM_VERSION="1.0.8"
+PSTM_VERSION="1.0.9"
 PSTM_REPO="CyrixJD115/PST-Manager"
 PST_REPO="deafdudecomputers/PalworldSaveTools"
 PSTM_RAW_BASE="https://raw.githubusercontent.com/$PSTM_REPO/main"
