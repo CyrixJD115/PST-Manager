@@ -67,7 +67,13 @@ get_latest_pst_tag() {
         echo ""
         return 1
     fi
-    echo "$tags" | grep -E '"tag_name"' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/' | while read -r tag; do
+    local tag_list
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        tag_list=$(echo "$tags" | sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p')
+    else
+        tag_list=$(echo "$tags" | grep -E '"tag_name"' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/')
+    fi
+    echo "$tag_list" | while read -r tag; do
         if [[ ! "$tag" =~ -beta ]] && [[ ! "$tag" =~ -pre ]] && [[ ! "$tag" =~ -alpha ]]; then
             echo "$tag"
             return 0
@@ -80,7 +86,11 @@ get_latest_pst_tag() {
 get_latest_pstm_version() {
     local api_url="https://api.github.com/repos/$PSTM_REPO/releases/latest"
     local tag
-    tag=$(curl -s "$api_url" 2>/dev/null | grep '"tag_name"' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/')
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        tag=$(curl -s "$api_url" 2>/dev/null | sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p')
+    else
+        tag=$(curl -s "$api_url" 2>/dev/null | grep '"tag_name"' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/')
+    fi
     if [ -n "$tag" ]; then
         echo "${tag#v}"
     else
