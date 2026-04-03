@@ -1,9 +1,10 @@
 $ErrorActionPreference = "Stop"
 
-$PSTM_VERSION = "1.0.0"
+$PSTM_VERSION = "1.0.8"
 $PSTM_REPO = "CyrixJD115/PST-Manager"
 $PST_REPO = "deafdudecomputers/PalworldSaveTools"
 $PSTM_RAW_BASE = "https://raw.githubusercontent.com/$PSTM_REPO/main"
+$PSTM_VERSION_URL = "$PSTM_RAW_BASE/version.yaml"
 
 $PST_DATA_DIR = Join-Path $env:LOCALAPPDATA "palworldsavetools"
 $PSTM_DIR = Join-Path $env:LOCALAPPDATA "pstm"
@@ -66,12 +67,30 @@ function Get-LatestPstTag {
     return ""
 }
 
+function Compare-Versions {
+    param([string]$V1, [string]$V2)
+    $a1 = $V1 -split '\.'
+    $a2 = $V2 -split '\.'
+    $len = [Math]::Max($a1.Count, $a2.Count)
+    for ($i = 0; $i -lt $len; $i++) {
+        $n1 = if ($i -lt $a1.Count) { [int]$a1[$i] } else { 0 }
+        $n2 = if ($i -lt $a2.Count) { [int]$a2[$i] } else { 0 }
+        if ($n1 -gt $n2) { return 1 }
+        if ($n1 -lt $n2) { return -1 }
+    }
+    return 0
+}
+
 function Get-LatestPstmVersion {
-    $apiUrl = "https://api.github.com/repos/$PSTM_REPO/releases/latest"
     try {
-        $response = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing
-        $tag = $response.tag_name
-        if ($tag) { return $tag.TrimStart('v') }
+        $yaml = Invoke-RestMethod -Uri $PSTM_VERSION_URL -UseBasicParsing
+        $match = [regex]::Match($yaml, 'version:\s*"([^"]+)"')
+        if (-not $match.Success) {
+            $match = [regex]::Match($yaml, 'version:\s+([0-9][0-9.]*[0-9])')
+        }
+        if ($match.Success) {
+            return $match.Groups[1].Value.TrimStart('v')
+        }
     } catch {}
     return ""
 }
@@ -460,9 +479,14 @@ function Update-Self {
 }
 
 $remoteVer = Get-LatestPstmVersion
-if ($remoteVer -and $remoteVer -ne $PSTM_VERSION) {
-    Write-Host -ForegroundColor Yellow "> pstm update available: v$PSTM_VERSION -> v$remoteVer (auto-updating...)"
-    Update-Self
+if ($remoteVer) {
+    $cmp = Compare-Versions -V1 $remoteVer -V2 $PSTM_VERSION
+    if ($cmp -eq 1) {
+        Write-Host -ForegroundColor Yellow "> pstm update available: v$PSTM_VERSION -> v$remoteVer (auto-updating...)"
+        Update-Self
+    } elseif ($cmp -eq -1) {
+        Write-Host -ForegroundColor Yellow "Warning: local version (v$PSTM_VERSION) is ahead of remote (v$remoteVer). Skipping update."
+    }
 }
 
 $command = if ($args.Count -gt 0) { $args[0] } else { "" }
@@ -478,7 +502,20 @@ switch ($command) {
     "-uninstall-all" { Uninstall-All }
     "-update-self" {
         Show-Banner
-        Update-Self
+        Write-Host -ForegroundColor Yellow "> Checking for pstm update..."
+        $remoteVer = Get-LatestPstmVersion
+        if (-not $remoteVer) {
+            Write-Host -ForegroundColor Red "x Error: Could not fetch remote version."
+        } else {
+            $cmp = Compare-Versions -V1 $remoteVer -V2 $PSTM_VERSION
+            if ($cmp -eq 1) {
+                Update-Self
+            } elseif ($cmp -eq 0) {
+                Write-Host -ForegroundColor Green "* pstm is already up to date (v$PSTM_VERSION)."
+            } else {
+                Write-Host -ForegroundColor Yellow "Warning: local version (v$PSTM_VERSION) is ahead of remote (v$remoteVer). Skipping update."
+            }
+        }
     }
     default {
         Write-Host -ForegroundColor Red "x Unknown command: $command"

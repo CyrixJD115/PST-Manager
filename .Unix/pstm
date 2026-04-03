@@ -1,9 +1,10 @@
 #!/bin/bash
 
-PSTM_VERSION="1.0.0"
+PSTM_VERSION="1.0.8"
 PSTM_REPO="CyrixJD115/PST-Manager"
 PST_REPO="deafdudecomputers/PalworldSaveTools"
 PSTM_RAW_BASE="https://raw.githubusercontent.com/$PSTM_REPO/main"
+PSTM_VERSION_URL="$PSTM_RAW_BASE/version.yaml"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -83,27 +84,53 @@ get_latest_pst_tag() {
     return 1
 }
 
+compare_versions() {
+    local v1="$1" v2="$2"
+    local IFS='.'
+    read -ra a1 <<< "$v1"
+    read -ra a2 <<< "$v2"
+    local len=${#a1[@]}
+    if [ ${#a2[@]} -gt $len ]; then len=${#a2[@]}; fi
+    local i
+    for ((i = 0; i < len; i++)); do
+        local n1=${a1[$i]:-0}
+        local n2=${a2[$i]:-0}
+        if [ "$n1" -gt "$n2" ]; then echo "1"; return 0; fi
+        if [ "$n1" -lt "$n2" ]; then echo "-1"; return 0; fi
+    done
+    echo "0"
+}
+
 get_latest_pstm_version() {
-    local api_url="https://api.github.com/repos/$PSTM_REPO/releases/latest"
-    local tag
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        tag=$(curl -s "$api_url" 2>/dev/null | sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p')
-    else
-        tag=$(curl -s "$api_url" 2>/dev/null | grep '"tag_name"' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/')
-    fi
-    if [ -n "$tag" ]; then
-        echo "${tag#v}"
-    else
+    local yaml
+    yaml=$(curl -s "$PSTM_VERSION_URL" 2>/dev/null)
+    if [ -z "$yaml" ]; then
         echo ""
+        return
     fi
+    local ver
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        ver=$(echo "$yaml" | sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p')
+        if [ -z "$ver" ]; then
+            ver=$(echo "$yaml" | sed -nE 's/^version:[[:space:]]+([0-9][0-9.]*[0-9]).*/\1/p')
+        fi
+    else
+        ver=$(echo "$yaml" | grep -E '^version:' | sed -E 's/^version:\s*"?([^"]+)"?.*/\1/')
+    fi
+    echo "${ver#v}"
 }
 
 check_for_pstm_update() {
     local remote_ver
     remote_ver=$(get_latest_pstm_version)
-    if [ -n "$remote_ver" ] && [ "$remote_ver" != "$PSTM_VERSION" ]; then
+    if [ -z "$remote_ver" ]; then return; fi
+    local cmp
+    cmp=$(compare_versions "$remote_ver" "$PSTM_VERSION")
+    if [ "$cmp" -eq 1 ]; then
         echo -e "${YELLOW}> pstm update available: v${PSTM_VERSION} -> v${remote_ver} (auto-updating...)${NC}"
         update_self
+    elif [ "$cmp" -eq -1 ]; then
+        echo -e "${YELLOW}Warning: local version (v${PSTM_VERSION}) is ahead of remote (v${remote_ver}). Skipping update.${NC}"
     fi
 }
 
@@ -436,7 +463,21 @@ case "${1:-}" in
     -update-self)
         banner
         echo -e "${YELLOW}> Checking for pstm update...${NC}"
-        update_self
+        local remote_ver
+        remote_ver=$(get_latest_pstm_version)
+        if [ -z "$remote_ver" ]; then
+            echo -e "${RED}x Error: Could not fetch remote version.${NC}"
+        else
+            local cmp
+            cmp=$(compare_versions "$remote_ver" "$PSTM_VERSION")
+            if [ "$cmp" -eq 1 ]; then
+                update_self
+            elif [ "$cmp" -eq 0 ]; then
+                echo -e "${GREEN}* pstm is already up to date (v${PSTM_VERSION}).${NC}"
+            else
+                echo -e "${YELLOW}Warning: local version (v${PSTM_VERSION}) is ahead of remote (v${remote_ver}). Skipping update.${NC}"
+            fi
+        fi
         ;;
     *)
         echo -e "${RED}x Unknown command: ${1}${NC}"
