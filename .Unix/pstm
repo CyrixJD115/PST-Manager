@@ -463,12 +463,10 @@ case "${1:-}" in
     -update-self)
         banner
         echo -e "${YELLOW}> Checking for pstm update...${NC}"
-        local remote_ver
         remote_ver=$(get_latest_pstm_version)
         if [ -z "$remote_ver" ]; then
             echo -e "${RED}x Error: Could not fetch remote version.${NC}"
         else
-            local cmp
             cmp=$(compare_versions "$remote_ver" "$PSTM_VERSION")
             if [ "$cmp" -eq 1 ]; then
                 update_self
